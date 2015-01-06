@@ -64,28 +64,65 @@ class BlogHandler(webapp2.RequestHandler):
 class Page(db.Model):
     content = db.TextProperty()
     created = db.DateTimeProperty(auto_now_add = True)
-    last_modified = db.DateTimeProperty(auto_now = True)
+    page_id = db.StringProperty()
+
     # note that the key name is the path of the page and added when the page is posted to the server
 
+    # @staticmethod
+    # def path_key(self):
+    #     uid = self.by_id()
+    #     return Key.from_path('Page', )
+
+
+    @classmethod
+    def all_by_path(cls, page_id):
+        pages = cls.gql("WHERE page_id = :1 ORDER BY created DESC", page_id)
+        return pages
+
+    @classmethod
+    def latest_by_path(cls, page_id):
+        #q = cls.all().filter("page_id=", page_id).get()
+        return cls.gql("WHERE page_id = :1", page_id).get()
+
+    @classmethod
+    def version_by_path(cls, page_id, version):
+        pages = cls.all_by_path(page_id)
+        index = 0
+        for page in pages:
+            if index == version:
+                return page
+            index += 1
+
+
+    @classmethod
     def by_id(cls, uid):
-    	return Page.get_by_id(uid)
+    	return cls.get_by_id(uid)
 
 class WikiPage(BlogHandler):
 	
     def get(self, page_id):
-		key = db.Key.from_path('Page', str(page_id))
-		page = db.get(key)
+        
+        version = self.request.get('version')
 
-		if not page:
-			self.redirect('/_edit' + page_id)
-		else:
-		    content = page.content
-		    self.render("page.html", content=content, page_id=page_id)
+        if version:
+            page = Page.version_by_path(page_id, int(version))
+            if not page:
+                self.redirect('/_edit' + page_id)
+            else:
+                content = page.content
+                self.render("hist-page.html", content=content, page_id=page_id, version=str(version))
+
+        else: #this is a normal view not through the history
+            page = Page.latest_by_path(page_id)
+            if not page:
+                self.redirect('/_edit' + page_id)
+            else:
+                content = page.content
+                self.render("page.html", content=content, page_id=page_id)
 
 class EditPage(BlogHandler):
     def get(self, page_id):
-        key = db.Key.from_path('Page', str(page_id))
-        page = db.get(key)
+        page = Page.latest_by_path(page_id)
 
         if not page:
             content = ""
@@ -99,9 +136,17 @@ class EditPage(BlogHandler):
     		self.redirect('/')
 
         content = self.request.get('content')
-        page = Page(key_name=page_id, content=content)
+        page = Page(page_id=page_id, content=content)
+#        logging.info(str(page.page_id) + " ---////--- " + str(page.content))
         page.put()
+        time.sleep(0.5)
         self.redirect(page_id)
+
+class HistoryPage(BlogHandler):
+    def get(self, page_id):
+        pages = Page.all_by_path(page_id)
+        
+        self.render("history.html", pages=pages, page_id=page_id)
 
 
 ##### user stuff
@@ -211,5 +256,6 @@ app = webapp2.WSGIApplication([('/signup', Signup),
 	('/login', Login),
 	('/logout', Logout),
 	('/_edit' + PAGE_RE, EditPage),
+    ('/_history' + PAGE_RE, HistoryPage),
 	(PAGE_RE, WikiPage)]
 	,debug=True)

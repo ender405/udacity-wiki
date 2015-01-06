@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <div class="post">
+
+	<div class="post-content">
+      {% for page in pages %}
+      
+      <div class="hist-details">
+      	{{page.created}} || {{page.content}}
+      	<span class="hist-options">
+      		<a href="{{page_id}}?version={{loop.index0}}">View</a> | <a href="/_edit{{page_id}}">Edit</a>
+      	</span>
+      </div>
+      {% endfor %}
+
+
+
+  	</div>
+
+  </div>
+
+{% endblock %}

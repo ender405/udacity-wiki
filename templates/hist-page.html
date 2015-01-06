@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <div class="post">
+
+	<div class="post-content">
+
+      {{content}}
+      
+  	</div>
+
+  	<div class="version-info">
+  		This is version {{version}} of this page.  See the <a href="{{page_id}}">latest</a>
+  	</div>
+
+  </div>
+
+{% endblock %}

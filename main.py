@@ -77,8 +77,7 @@ class WikiPage(BlogHandler):
 		page = db.get(key)
 
 		if not page:
-			content = ""
-			self.render("page.html", content=content, page_id=page_id)
+			self.redirect('/_edit' + page_id)
 		else:
 		    content = page.content
 		    self.render("page.html", content=content, page_id=page_id)

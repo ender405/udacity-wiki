@@ -144,9 +144,12 @@ class EditPage(BlogHandler):
 
 class HistoryPage(BlogHandler):
     def get(self, page_id):
-        pages = Page.all_by_path(page_id)
         
-        self.render("history.html", pages=pages, page_id=page_id)
+        if Page.latest_by_path(page_id):
+            pages = Page.all_by_path(page_id)
+            self.render("history.html", pages=pages, page_id=page_id)
+        else:
+            self.redirect('/_edit' + page_id)
 
 
 ##### user stuff
